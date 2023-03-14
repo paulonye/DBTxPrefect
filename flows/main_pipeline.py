@@ -67,7 +67,7 @@ def load_bigquery(df: pd.DataFrame, table_name: str) -> None:
     gcp_credentials_block = GcpCredentials.load("zoom")
 
     df.to_gbq(
-        destination_table=f"staging.{table_name}",
+        destination_table=f"mixmax_staging.{table_name}",
         project_id="sendme-test-db",
         credentials=gcp_credentials_block.get_credentials_from_service_account(),
         chunksize=500_000,
