@@ -133,6 +133,7 @@ IN DBT, we will test the primary id of each dataset for null value and uniquenes
 
 ### BUILDING THE DATA MODEL
 We will use DBT to create the ff tables from the staging schema tables.
+The models can be found in `dbt_models/models/core`
 Here are the Models Created:
 
 - Feature Facts Table
@@ -215,3 +216,7 @@ The main dashboard which gives a snapshot of operations
 ![Cover_Image](https://nwosupaulonye.s3.amazonaws.com/dash1.png)
 A dashboard that shows how workspaces uses mixmax features
 ![Cover_Image](https://nwosupaulonye.s3.amazonaws.com/dash2.png)
+
+
+## Build Prefect Automation for Error Handling
+A Slack webhook URL is set and connected to the prefect deployment flow, this will alert us in a slack channel if the pipeline fails.
