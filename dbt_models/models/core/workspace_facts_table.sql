@@ -25,7 +25,8 @@ SELECT workspace.workspace_id,
         payment.seats_purchased,
         payment.arr_amount,
         COUNT(DISTINCT workspace.member_id) AS num_members,
-        features.number_of_features_used
+        features.number_of_features_used,
+        IF(payment.stripe_id IS NULL, 'Unpaid Subscription', 'Paid Subscription') AS payment_status
 FROM workspace
 LEFT JOIN payment
 ON workspace.stripe_id = payment.stripe_id
