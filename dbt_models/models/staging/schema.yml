@@ -3,7 +3,7 @@ version: 2
 sources:
   - name: staging
     database: sendme-test-db
-    schema: staging
+    schema: mixmax_staging
 
     tables:
       - name: dim_features_table
