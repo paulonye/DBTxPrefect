@@ -1,0 +1,110 @@
+version: 2
+
+sources:
+  - name: staging
+    database: sendme-test-db
+    schema: staging
+
+    tables:
+      - name: dim_features_table
+      - name: plan_feature_definitions_table
+      - name: prepaid_account_table
+      - name: stripe_arr_table
+      - name: users_table
+      - name: workspaces_feature_usage_weekly_table
+      - name: workspaces_table
+
+models:
+    - name: dim_features
+      description: >
+        A lookup table to describe 42 features utilizes by users
+      columns:
+          - name: FEATURE_KEY
+            description: Primary key for this table
+            tests:
+                - unique:
+                    severity: warn
+                - not_null:
+                    severity: warn
+
+    - name: plan_feature_definitions
+      description: >
+        Mixmax subscription plans
+      columns:
+          - name: FEATURE_NAME
+            description: Primary key for this table
+            tests:
+                - unique:
+                    severity: warn
+                - not_null:
+                    severity: warn
+      
+    - name: prepaid_account
+      description: >
+        Customers that have been invited to a workspace.
+      columns:
+          - name: PREPAID_USER_ID
+            tests:
+                - unique:
+                    severity: warn
+                - not_null:
+                    severity: warn
+          - name: USER_ID
+            tests:
+                - unique:
+                    severity: warn
+                - not_null:
+                    severity: warn
+    - name: stripe_arr
+      description: >
+        ARR for a subset of fictitious customers
+      columns:
+          - name: STRIPE_ID_HASH
+            description: Primary key for this table
+            tests:
+                - unique:
+                    severity: warn
+                - not_null:
+                    severity: warn
+    - name: users
+      description: >
+        A subset of fictitious customers
+      columns:
+          - name: USER_ID
+            description: Primary key for this table
+            tests:
+                - unique:
+                    severity: warn
+                - not_null:
+                    severity: warn
+    - name: workspaces
+      description: >
+        Users belong to workspaces where they are able to share assets with other members of their workspace.
+      columns:
+          - name: WORKSPACE_ID
+            description: Primary key for this table
+            tests:
+                - unique:
+                    severity: warn
+                - not_null:
+                    severity: warn
+          - name: STRIPE_ID_HASH
+            description: Foreign key for this tablE
+            tests:
+                - unique:
+                    severity: warn
+                - not_null:
+                    severity: warn            
+    - name: workspaces_feature_usage_weekly
+      description: >
+        The features utilized by a workspace in a given week.
+      columns:
+          - name: WORKSPACE_ID
+            description: Foreign key for this table
+            
+
+
+    
+
+
+          
