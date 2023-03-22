@@ -1,43 +1,29 @@
+"""This Data Pipeline collects data from Google Cloud Storage Bucket, and \
+    loads it into a Bigquery Warehoiuse"""
+
 from pathlib import Path
 import pandas as pd
 from prefect import flow, task
 from prefect_gcp import GcpCredentials
-from prefect_sqlalchemy import SqlAlchemyConnector
+from prefect_gcp.cloud_storage import GcsBucket
 
 
-@task(log_prints=True, tags=['Extract from Postgres'])
-def extract_from_postgres(table_name: str) -> pd.DataFrame:
-
-    """This function extracts the data from a postgres database
-            function args:
-                - TABLE: The name of the table to extract data from
-                
-            Output:
-                - Dataframe Object: The filepath of the saved file is returned"""
-
-
-    connection_block = SqlAlchemyConnector.load("postgres-connector")
-
-
-    with connection_block.get_connection(begin=False) as engine:
-
-        query = f"""select * from {table_name}"""
-
-        print(query)
-
-        df_table = pd.read_sql(query, engine)
-
-        df_table = df_table.drop(['index'], axis =1)
-
-        print('Load Successful')
-
-        engine.connect().close()
-
-        return df_table
+@task(retries=3, tags=["extract"])
+def extract_from_gcs(table) -> Path:
+    """Download table from GCS"""
+    gcs_path = f"data/{table}"
+    gcs_block = GcsBucket.load("zoom-gcs")
+    gcs_block.get_directory(from_path=gcs_path, local_path="./load")
+    path = Path(f"./load/data/{table}")
+    return path
 
 
 @task(log_prints=True, tags=['Tranform Schema to Bigquery Standard'])
-def convert_to_bigquery_types(df: pd.DataFrame) -> pd.DataFrame:
+def convert_to_bigquery_types(path: Path) -> pd.DataFrame:
+    """Convert the Data Type to a Standard Scheme"""
+
+    df = pd.read_csv(path)
+
     for col in df.columns:
         # check the data type of the column
         dtype = df[col].dtype
@@ -53,7 +39,7 @@ def convert_to_bigquery_types(df: pd.DataFrame) -> pd.DataFrame:
             df[col] = df[col].astype('int')
         elif dtype == 'float':
             df[col] = df[col].astype('float')
-        elif dtype == 'datetime64[ns]':
+        elif dtype == 'datetime':
             df[col] = df[col].astype('datetime')
      
     return df
@@ -66,6 +52,9 @@ def load_bigquery(df: pd.DataFrame, table_name: str) -> None:
 
     gcp_credentials_block = GcpCredentials.load("zoom")
 
+    table_name = table_name.strip('.csv')
+
+    #Ensure you create the Schema on Bigquery
     df.to_gbq(
         destination_table=f"mixmax_staging.{table_name}",
         project_id="sendme-test-db",
@@ -75,8 +64,8 @@ def load_bigquery(df: pd.DataFrame, table_name: str) -> None:
     )
 
 @flow()
-def load_data_to_bigquery(table):
-    df_table = extract_from_postgres(table)
+def load_data_to_bigquery(table: str):
+    df_table = extract_from_gcs(table)
     df_table = convert_to_bigquery_types(df_table)
     load_bigquery(df_table, table)
 
@@ -86,7 +75,7 @@ def load_all_to_bigquery(tables: list[str] = ['table1', 'table2']):
         load_data_to_bigquery(table)
 
 if __name__ == '__main__':
-    tables = ['dim_features_table', 'plan_feature_definitions_table', 'prepaid_account_table', 'stripe_arr_table',
-               'users_table', 'workspaces_feature_usage_weekly_table',  'workspaces_table']
+    tables = ['dim_features.csv', 'plan_feature_definitions.csv', 'prepaid_account.csv',
+                'stripe_arr.csv', 'users.csv', 'workspaces.csv', 'workspaces_feature_usage_weekly.csv']
 
     load_all_to_bigquery(tables)
